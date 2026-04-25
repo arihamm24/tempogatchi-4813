@@ -11,15 +11,11 @@
 #define TFT_DC    7
 #define TFT_RST   8
 
-//raw image dimensions
-#define IMG_W 50
-#define IMG_H 71
-
 //Bytes of non-image information before the pixels start!
 #define IMG_HEADER_BYTES 8
 
 //Zoom magnification. 1 pixel on the LCD = one square with IMG_SCALE as length
-#define IMG_SCALE 5
+#define IMG_SCALE 9
 
 //Offsets to position the zoomed image
 #define IMG_X_OFFSET -10 //Neg = left, Pos = right
@@ -52,12 +48,12 @@ int sound;
 */
 
 //HELPER FUNCTIONS
-void drawImageRGB888(const unsigned char* img) {
-  for (int sourceY = 0; sourceY < IMG_H; sourceY++) { //each row of image
-    for (int sourceX = 0; sourceX < IMG_W; sourceX++) { //each column of the image
+void drawImageRGB(const unsigned char* img, int width, int height) {
+  for (int sourceY = 0; sourceY < height; sourceY++) { //each row of image
+    for (int sourceX = 0; sourceX < width; sourceX++) { //each column of the image
     //this loop colors 1 pixel at a time!
 
-      int srcIndex = IMG_HEADER_BYTES + ((sourceY * IMG_W + sourceX) * 3); 
+      int srcIndex = IMG_HEADER_BYTES + ((sourceY * width + sourceX) * 3); 
 
       //read the RGB values from the image buffer(array) 
       uint8_t r = pgm_read_byte(&img[srcIndex + 0]) * 4;
@@ -68,13 +64,13 @@ void drawImageRGB888(const unsigned char* img) {
 
       //-90 degree rotation
       int dx = sourceY; //rotation makes X -> Y
-      int dy = IMG_W - 1 - sourceX; //new Y
+      int dy = width - 1 - sourceX; //new Y
 
       tft.fillRect(
         IMG_X_OFFSET + dx * IMG_SCALE, //starting x
         IMG_Y_OFFSET + dy * IMG_SCALE, //starting y
-        IMG_SCALE, //width
-        IMG_SCALE, //height
+        IMG_SCALE, //width of scaled up image
+        IMG_SCALE, //height of scaled up image
         color //color (duh)
       );
     }
@@ -104,9 +100,10 @@ void updateLEDs(uint32_t color) {
 
 void setup() {
   //LCD SETUP
-  tft.init(240, 320);
-  tft.setRotation(3);
+  tft.init(240, 320); //dimension of the screen
+  tft.setRotation(3); //-90 degree rotation (just how we had to arrange the screen in the igloo)
   tft.fillScreen(ST77XX_BLACK);
+  drawImageRGB(gImage_cold3, 28, 38);
 
   //NEOPIXEL SETUP
   pixels.begin();
@@ -129,6 +126,7 @@ void loop() {
   // SENSOR ERROR HANDLING
   if (isnan(humidity) || isnan(temperature)) {
       Serial.println("ERROR: Failed to read from DHT11");
+      delay(3000);
       return;
   }
   
@@ -176,6 +174,8 @@ void loop() {
     updateLEDs(pixels.Color(0,0,255));
 
     //COLD ANIMATION
+    tft.fillScreen(ST77XX_BLUE);
+    drawImageRGB(gImage_cold1, 28,38);
 
   } else if (temperature >= 24) { //24C = 75F, a little higher than usual upper limit but offers wider range for our purposes
     //RED NEOPIXELS

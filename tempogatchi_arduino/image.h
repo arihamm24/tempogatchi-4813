@@ -7,8 +7,8 @@
 extern "C" {
 #endif
 
-extern const unsigned char gImage_hello1[] PROGMEM;
-extern const unsigned char gImage_hello2[] PROGMEM;
+extern PROGMEM const unsigned char gImage_hello1[];
+extern PROGMEM const unsigned char gImage_hello2[];
 
 //HOT
 extern PROGMEM const unsigned char gImage_hot1[];
