@@ -20,10 +20,13 @@
 #define IMG_ROTATION 1   // 3 = -90 degrees / 270 degrees
 
 #define DHT11_PIN 2
-#define MIC_PIN A0;
+#define MIC_PIN A0
+#define NEO_PIN 4
+#define NUM_PIXELS 16
 
 Adafruit_ST7789 tft = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_RST); //initializing the screen for easy reference
 DHT dht11(DHT11_PIN, DHT11); //initializing the temp sensor for easy reference
+Adafruit_NeoPixel pixels(NUM_PIXELS, NEO_PIN, NEO_GRB + NEO_KHZ800);
 
 float temperature;
 float humidity;
@@ -41,7 +44,7 @@ int sound;
 
 */
 
-
+//HELPER FUNCTIONS
 void drawImageRGB888(const unsigned char* img) {
   for (int sy = 0; sy < IMG_H; sy++) {
     for (int sx = 0; sx < IMG_W; sx++) {
@@ -70,7 +73,10 @@ void drawImageRGB888(const unsigned char* img) {
     }
   }
 }
-
+void updateLEDs(uint32_t color) {
+  pixels.fill(color);
+  pixels.show();
+}
 /* SOUND FUNCTION (from Victor)
   int readSoundLevel() {
     const int samples = 200;
@@ -86,11 +92,16 @@ void drawImageRGB888(const unsigned char* img) {
     return maxVal - minVal;
   }
 */
+
 void setup() {
   //LCD SETUP
   tft.init(240, 320);
   tft.setRotation(3);
   tft.fillScreen(ST77XX_BLACK);
+
+  //NEOPIXEL SETUP
+  pixels.begin();
+  pixels.setBrightness(50);
 
   //DHT11 SETUP
   /* Serial monitors are how we send data to and from the Arduino. We need it to use any sensors.*/
@@ -109,10 +120,6 @@ void loop() {
   // SENSOR ERROR HANDLING
   if (isnan(humidity) || isnan(temperature)) {
       Serial.println("ERROR: Failed to read from DHT11");
-      int red = tft.color565(5, 0, 0);
-      tft.drawLine(80, 100 y0, 80, 110, red);
-      tft.drawLine(120, 100 y0, 120, 110, red);
-      
       return;
   }
   
@@ -157,12 +164,24 @@ void loop() {
   //amimation and neopixels
   if (temperature <= 21 || humidity ) { //21C = 70F, lower range for most public schools
     //BLUE NEOPIXELS
+    updateLEDs(pixels.Color(0,0,255));
+
     //COLD ANIMATION
+
   } else if (temperature >= 24) { //24C = 75F, a little higher than usual upper limit but offers wider range for our purposes
     //RED NEOPIXELS
+    updateLEDs(pixels.Color(255,0,0));
+
     //HOT ANIMATION
+    
   } else { //Anything with in this range is fairly ambient
     //GREEN NEOPIXELS
+    updateLEDs(pixels.Color(0,255,0));
+
     //HELLO ANIMATION
+
   }
+
+  delay(2500);
+}
   
