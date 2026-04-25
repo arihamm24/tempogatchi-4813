@@ -5,6 +5,7 @@
 #include <DHT.h>
 #include <Adafruit_NeoPixel.h>
 #include "image.h"
+#include <WiFiS3.h>
 
 //which Arduino pins are connected to the display
 #define TFT_CS   10
@@ -22,7 +23,7 @@
 #define IMG_Y_OFFSET 0//Neg = up, Pos = down
 #define IMG_ROTATION 1   // 3 = -90 degrees / 270 degrees
 
-#define DHT11_PIN 2
+#define DHT11_PIN 3
 #define MIC_PIN A0
 #define NEO_PIN 4
 #define NUM_PIXELS 16
@@ -169,7 +170,7 @@ void loop() {
 */
 
   //amimation and neopixels
-  if (temperature <= 21 || humidity ) { //21C = 70F, lower range for most public schools
+  if (temperature <= 21 || humidity >= 70) {  //21C = 70F, lower range for most public schools
     //BLUE NEOPIXELS
     updateLEDs(pixels.Color(0,0,255));
 
