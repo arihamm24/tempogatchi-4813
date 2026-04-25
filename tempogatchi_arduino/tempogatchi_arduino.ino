@@ -15,7 +15,7 @@
 //Bytes of non-image information before the pixels start!
 #define IMG_HEADER_BYTES 8
 
-//Zoom magnification. 1 pixel on the LCD = one square with IMG_SCALE as length
+//Zoom magnification. 1 pixel on the LCD = one 9x9 PX square
 #define IMG_SCALE 9
 
 //Offsets to position the zoomed image
@@ -57,9 +57,9 @@ void drawImageRGB(const unsigned char* img, int width, int height) {
       int srcIndex = IMG_HEADER_BYTES + ((sourceY * width + sourceX) * 3); 
 
       //read the RGB values from the image buffer(array) 
-      uint8_t r = pgm_read_byte(&img[srcIndex + 0]) * 4;
+      uint8_t r = pgm_read_byte(&img[srcIndex + 2]) * 4;
       uint8_t g = pgm_read_byte(&img[srcIndex + 1]) * 4;
-      uint8_t b = pgm_read_byte(&img[srcIndex + 2]) * 4;
+      uint8_t b = pgm_read_byte(&img[srcIndex + 0]) * 4;
 
       uint16_t color = tft.color565(r, g, b); //turn RGB values into the 16-bit color
 
@@ -104,7 +104,6 @@ void setup() {
   tft.init(240, 320); //dimension of the screen
   tft.setRotation(3); //-90 degree rotation (just how we had to arrange the screen in the igloo)
   tft.fillScreen(ST77XX_BLACK);
-  drawImageRGB(gImage_cold3, 28, 38);
 
   //NEOPIXEL SETUP
   pixels.begin();
@@ -178,21 +177,33 @@ void loop() {
 
     //COLD ANIMATION
     drawImageRGB(gImage_cold1, 28,38);
+    delay(500);
+    drawImageRGB(gImage_cold2, 28,38);
+    delay(500);
+    drawImageRGB(gImage_cold3, 28,38);
+    delay(500);
 
   } else if (temperature >= 24) { //24C = 75F, a little higher than usual upper limit but offers wider range for our purposes
     //RED NEOPIXELS
     updateLEDs(pixels.Color(255,0,0));
 
     //HOT ANIMATION
+    drawImageRGB(gImage_hot1, 24,37);
+    delay(500);
+    drawImageRGB(gImage_hot2, 24,37);
+    delay(500);
     
   } else { //Anything with in this range is fairly ambient
     //GREEN NEOPIXELS
-    updateLEDs(pixels.Color(0,255,0));
+    updateLEDs(pixels.Color(0, 255, 0));
 
     //HELLO ANIMATION
+    drawImageRGB(gImage_hello1, 30,37);
+    delay(500);
+    drawImageRGB(gImage_hello2, 30,37);
+    delay(500);
+
 
   }
-
-  delay(2500);
 }
   
