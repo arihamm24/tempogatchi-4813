@@ -83,21 +83,21 @@ void updateLEDs(uint32_t color) {
   pixels.show();
 }
 
-/* SOUND FUNCTION (from Victor)
-  int readSoundLevel() {
-    const int samples = 200;
-    int minVal = 1023;
-    int maxVal = 0;
-  
-    for (int i = 0; i < samples; i++) {
-      int v = analogRead(MIC_PIN);
-      if (v < minVal) minVal = v;
-      if (v > maxVal) maxVal = v;
-      delay(1);
-    }
-    return maxVal - minVal;
+
+int readSoundLevel() {
+  const int samples = 200;
+  int minVal = 1023;
+  int maxVal = 0;
+
+  for (int i = 0; i < samples; i++) {
+    int v = analogRead(MIC_PIN);
+    if (v < minVal) minVal = v;
+    if (v > maxVal) maxVal = v;
+    delay(1);
   }
-*/
+  return maxVal - minVal;
+}
+
 
 void setup() {
   //LCD SETUP
@@ -111,7 +111,7 @@ void setup() {
   pixels.setBrightness(50);
 
   //DHT11 SETUP
-  /* Serial monitors are how we send data to and from the Arduino. We need it to use any sensors.*/
+  /* Serial monitors are how we send data to and from the Arduino. We need it to use any sensors. */
   Serial.begin(115200);
   Serial.println("Waiting for data...");
   dht11.begin(); //sensing data
@@ -122,7 +122,7 @@ void loop() {
   //sensing data - temperature, humidity, and sound
   temperature = dht11.readTemperature();
   humidity = dht11.readHumidity();
-  //sound = readSoundLevel();
+  sound = readSoundLevel();
 
   // SENSOR ERROR HANDLING
   if (isnan(humidity) || isnan(temperature)) {
@@ -131,11 +131,13 @@ void loop() {
       return;
   }
   
-  // PRINT TEMP AND HUMIDITY
+  // PRINT TEMP SOUND AND HUMIDITY
   Serial.print("Temp: ");
   Serial.print(temperature);
   Serial.print(" C | Humidity: ");
   Serial.print(humidity);
+  Serial.print(" | Sound Level: ");;
+  Serial.println(sound);
 
   //send to server
   /* 
@@ -175,7 +177,6 @@ void loop() {
     updateLEDs(pixels.Color(0,0,255));
 
     //COLD ANIMATION
-    tft.fillScreen(ST77XX_BLUE);
     drawImageRGB(gImage_cold1, 28,38);
 
   } else if (temperature >= 24) { //24C = 75F, a little higher than usual upper limit but offers wider range for our purposes
