@@ -6,17 +6,24 @@
 #include <Adafruit_NeoPixel.h>
 #include "image.h"
 
+//which Arduino pins are connected to the display
 #define TFT_CS   10
 #define TFT_DC    7
 #define TFT_RST   8
 
+//raw image dimensions
 #define IMG_W 50
 #define IMG_H 71
+
+//Bytes of non-image information before the pixels start!
 #define IMG_HEADER_BYTES 8
+
+//Zoom magnification. 1 pixel on the LCD = one square with IMG_SCALE as length
 #define IMG_SCALE 5
 
-#define IMG_X_OFFSET -10
-#define IMG_Y_OFFSET 0
+//Offsets to position the zoomed image
+#define IMG_X_OFFSET -10 //Neg = left, Pos = right
+#define IMG_Y_OFFSET 0//Neg = up, Pos = down
 #define IMG_ROTATION 1   // 3 = -90 degrees / 270 degrees
 
 #define DHT11_PIN 2
@@ -46,37 +53,39 @@ int sound;
 
 //HELPER FUNCTIONS
 void drawImageRGB888(const unsigned char* img) {
-  for (int sy = 0; sy < IMG_H; sy++) {
-    for (int sx = 0; sx < IMG_W; sx++) {
+  for (int sourceY = 0; sourceY < IMG_H; sourceY++) { //each row of image
+    for (int sourceX = 0; sourceX < IMG_W; sourceX++) { //each column of the image
+    //this loop colors 1 pixel at a time!
 
-      int srcIndex = IMG_HEADER_BYTES + ((sy * IMG_W + sx) * 3);
+      int srcIndex = IMG_HEADER_BYTES + ((sourceY * IMG_W + sourceX) * 3); 
 
+      //read the RGB values from the image buffer(array) 
       uint8_t r = pgm_read_byte(&img[srcIndex + 0]) * 4;
       uint8_t g = pgm_read_byte(&img[srcIndex + 1]) * 4;
       uint8_t b = pgm_read_byte(&img[srcIndex + 2]) * 4;
 
-      uint16_t color = tft.color565(r, g, b);
+      uint16_t color = tft.color565(r, g, b); //turn RGB values into the 16-bit color
 
-      int dx, dy;
-
-      // fixed -90 degree rotation
-      dx = sy;
-      dy = IMG_W - 1 - sx;
+      //-90 degree rotation
+      int dx = sourceY; //rotation makes X -> Y
+      int dy = IMG_W - 1 - sourceX; //new Y
 
       tft.fillRect(
-        IMG_X_OFFSET + dx * IMG_SCALE,
-        IMG_Y_OFFSET + dy * IMG_SCALE,
-        IMG_SCALE,
-        IMG_SCALE,
-        color
+        IMG_X_OFFSET + dx * IMG_SCALE, //starting x
+        IMG_Y_OFFSET + dy * IMG_SCALE, //starting y
+        IMG_SCALE, //width
+        IMG_SCALE, //height
+        color //color (duh)
       );
     }
   }
 }
+
 void updateLEDs(uint32_t color) {
   pixels.fill(color);
   pixels.show();
 }
+
 /* SOUND FUNCTION (from Victor)
   int readSoundLevel() {
     const int samples = 200;
