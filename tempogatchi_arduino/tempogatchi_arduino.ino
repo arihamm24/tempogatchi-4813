@@ -7,72 +7,68 @@
 #include "image.h"
 #include <WiFiS3.h>
 
-//which Arduino pins are connected to the display
 #define TFT_CS   10
 #define TFT_DC    7
 #define TFT_RST   8
 
-//Bytes of non-image information before the pixels start!
 #define IMG_HEADER_BYTES 8
+<<<<<<< HEAD
 
 //Zoom magnification. 1 pixel on the LCD = one 9x9 PX square
+=======
+>>>>>>> 752c01f (updated tempogatchi arduino code and dashboard)
 #define IMG_SCALE 9
-
-//Offsets to position the zoomed image
-#define IMG_X_OFFSET -10 //Neg = left, Pos = right
-#define IMG_Y_OFFSET 0//Neg = up, Pos = down
-#define IMG_ROTATION 1   // 3 = -90 degrees / 270 degrees
+#define IMG_X_OFFSET -10
+#define IMG_Y_OFFSET 0
+#define IMG_ROTATION 1
 
 #define DHT11_PIN 3
 #define MIC_PIN A0
 #define NEO_PIN 4
 #define NUM_PIXELS 16
 
-Adafruit_ST7789 tft = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_RST); //initializing the screen for easy reference
-DHT dht11(DHT11_PIN, DHT11); //initializing the temp sensor for easy reference
+Adafruit_ST7789 tft = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_RST);
+DHT dht11(DHT11_PIN, DHT11);
 Adafruit_NeoPixel pixels(NUM_PIXELS, NEO_PIN, NEO_GRB + NEO_KHZ800);
 
 float temperature;
 float humidity;
 int sound;
 
+char ssid[] = "Deepthi";
+char pass[] = "deepthimun06!";
 
-/* WIFI SETUP
-  char ssid[] = "YOUR_WIFI_NAME";
-  char pass[] = "YOUR_WIFI_PASSWORD";
-  
-  char host[] = "script.google.com";
-  String scriptPath = "/macros/s/AKfycbw8CTQ6rLaCNyg0ZCN2DIP3lWgGBUgFYQx8Q0NR8hZC-nH6f4odVU0cqXctE6CGDkwF/exec";
-  
-  WiFiSSLClient client;
+char host[] = "script.googleusercontent.com";
+String scriptPath = "/macros/s/AKfycbw8CTQ6rLaCNyg0ZCN2DIP3lWgGBUgFYQx8Q0NR8hZC-nH6f4odVU0cqXctE6CGDkwF/exec";
 
-*/
+WiFiClient client;
 
-//HELPER FUNCTIONS
 void drawImageRGB(const unsigned char* img, int width, int height) {
-  for (int sourceY = 0; sourceY < height; sourceY++) { //each row of image
-    for (int sourceX = 0; sourceX < width; sourceX++) { //each column of the image
-    //this loop colors 1 pixel at a time!
+  for (int sourceY = 0; sourceY < height; sourceY++) {
+    for (int sourceX = 0; sourceX < width; sourceX++) {
+      int srcIndex = IMG_HEADER_BYTES + ((sourceY * width + sourceX) * 3);
 
+<<<<<<< HEAD
       int srcIndex = IMG_HEADER_BYTES + ((sourceY * width + sourceX) * 3); 
 
       //read the RGB values from the image buffer(array) 
+=======
+>>>>>>> 752c01f (updated tempogatchi arduino code and dashboard)
       uint8_t r = pgm_read_byte(&img[srcIndex + 2]) * 4;
       uint8_t g = pgm_read_byte(&img[srcIndex + 1]) * 4;
       uint8_t b = pgm_read_byte(&img[srcIndex + 0]) * 4;
 
-      uint16_t color = tft.color565(r, g, b); //turn RGB values into the 16-bit color
+      uint16_t color = tft.color565(r, g, b);
 
-      //-90 degree rotation
-      int dx = sourceY; //rotation makes X -> Y
-      int dy = width - 1 - sourceX; //new Y
+      int dx = sourceY;
+      int dy = width - 1 - sourceX;
 
       tft.fillRect(
-        IMG_X_OFFSET + dx * IMG_SCALE, //starting x
-        IMG_Y_OFFSET + dy * IMG_SCALE, //starting y
-        IMG_SCALE, //width of scaled up image
-        IMG_SCALE, //height of scaled up image
-        color //color (duh)
+        IMG_X_OFFSET + dx * IMG_SCALE,
+        IMG_Y_OFFSET + dy * IMG_SCALE,
+        IMG_SCALE,
+        IMG_SCALE,
+        color
       );
     }
   }
@@ -83,7 +79,10 @@ void updateLEDs(uint32_t color) {
   pixels.show();
 }
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 752c01f (updated tempogatchi arduino code and dashboard)
 int readSoundLevel() {
   const int samples = 200;
   int minVal = 1023;
@@ -95,6 +94,7 @@ int readSoundLevel() {
     if (v > maxVal) maxVal = v;
     delay(1);
   }
+<<<<<<< HEAD
   return maxVal - minVal;
 }
 
@@ -103,90 +103,138 @@ void setup() {
   //LCD SETUP
   tft.init(240, 320); //dimension of the screen
   tft.setRotation(3); //-90 degree rotation (just how we had to arrange the screen in the igloo)
+=======
+
+  return maxVal - minVal;
+}
+
+void connectToWiFi() {
+  Serial.print("Connecting to WiFi");
+
+  while (WiFi.begin(ssid, pass) != WL_CONNECTED) {
+    Serial.print(".");
+    delay(3000);
+  }
+
+  Serial.println();
+  Serial.println("Connected to WiFi");
+
+  delay(3000);
+
+  Serial.print("IP Address: ");
+  Serial.println(WiFi.localIP());
+}
+
+void sendToGoogleSheets(float temperature, float humidity, int sound) {
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("WiFi disconnected. Reconnecting...");
+    connectToWiFi();
+  }
+
+  String url = scriptPath
+               + "?temperature=" + String(temperature, 1)
+               + "&humidity=" + String(humidity, 1)
+               + "&sound=" + String(sound);
+
+  Serial.println("Sending data...");
+
+  if (client.connect(host, 80)) {
+    client.println("GET " + url + " HTTP/1.0");
+    client.println("Host: script.google.com");
+    client.println("Connection: close");
+    client.println();
+
+    while (client.connected() || client.available()) {
+      if (client.available()) {
+        String line = client.readStringUntil('\n');
+        Serial.println(line);
+      }
+    }
+
+    client.stop();
+    Serial.println("Done");
+  } else {
+    Serial.println("Connection failed");
+  }
+}
+
+void setup() {
+  Serial.begin(115200);
+  delay(1500);
+
+  tft.init(240, 320);
+  tft.setRotation(3);
+>>>>>>> 752c01f (updated tempogatchi arduino code and dashboard)
   tft.fillScreen(ST77XX_BLACK);
 
-  //NEOPIXEL SETUP
   pixels.begin();
   pixels.setBrightness(50);
+  pixels.show();
 
+  dht11.begin();
+
+<<<<<<< HEAD
   //DHT11 SETUP
   /* Serial monitors are how we send data to and from the Arduino. We need it to use any sensors. */
   Serial.begin(115200);
+=======
+>>>>>>> 752c01f (updated tempogatchi arduino code and dashboard)
   Serial.println("Waiting for data...");
-  dht11.begin(); //sensing data
-
+  connectToWiFi();
 }
 
 void loop() {
-  //sensing data - temperature, humidity, and sound
   temperature = dht11.readTemperature();
   humidity = dht11.readHumidity();
   sound = readSoundLevel();
 
-  // SENSOR ERROR HANDLING
   if (isnan(humidity) || isnan(temperature)) {
-      Serial.println("ERROR: Failed to read from DHT11");
-      delay(3000);
-      return;
+    Serial.println("ERROR: Failed to read from DHT11");
+    delay(3000);
+    return;
   }
+<<<<<<< HEAD
   
   // PRINT TEMP SOUND AND HUMIDITY
+=======
+
+>>>>>>> 752c01f (updated tempogatchi arduino code and dashboard)
   Serial.print("Temp: ");
   Serial.print(temperature);
   Serial.print(" C | Humidity: ");
   Serial.print(humidity);
+<<<<<<< HEAD
   Serial.print(" | Sound Level: ");;
+=======
+  Serial.print(" | Sound Level: ");
+>>>>>>> 752c01f (updated tempogatchi arduino code and dashboard)
   Serial.println(sound);
 
-  //send to server
-  /* 
-    String url = scriptPath
-        + "?temperature=" + String(temperature, 1)
-        + "&humidity=" + String(humidity, 1)
-        + "&sound=" + String(sound);
- 
-    Serial.println("Sending data...");
-  
-    if (client.connect(host, 443)) {
-      client.println("GET " + url + " HTTP/1.1");
-      client.println("Host: script.google.com");
-      client.println("Connection: close");
-      client.println();
-  
-      while (client.connected()) {
-        String line = client.readStringUntil('\n');
-        if (line == "\r") break;
-      }
-  
-      while (client.available()) {
-        String line = client.readStringUntil('\n');
-        Serial.println(line);
-      }
-  
-      client.stop();
-      Serial.println("Done");
-    } else {
-      Serial.println("Connection failed");
-    }
-*/
+  sendToGoogleSheets(temperature, humidity, sound);
 
-  //amimation and neopixels
-  if (temperature <= 21 || humidity >= 70) {  //21C = 70F, lower range for most public schools
-    //BLUE NEOPIXELS
-    updateLEDs(pixels.Color(0,0,255));
+  if (temperature <= 21 || humidity >= 70) {
+    updateLEDs(pixels.Color(0, 0, 255));
 
+<<<<<<< HEAD
     //COLD ANIMATION
     drawImageRGB(gImage_cold1, 28,38);
     delay(500);
     drawImageRGB(gImage_cold2, 28,38);
     delay(500);
     drawImageRGB(gImage_cold3, 28,38);
+=======
+    drawImageRGB(gImage_cold1, 28, 38);
+    delay(500);
+    drawImageRGB(gImage_cold2, 28, 38);
+    delay(500);
+    drawImageRGB(gImage_cold3, 28, 38);
+>>>>>>> 752c01f (updated tempogatchi arduino code and dashboard)
     delay(500);
 
-  } else if (temperature >= 24) { //24C = 75F, a little higher than usual upper limit but offers wider range for our purposes
-    //RED NEOPIXELS
-    updateLEDs(pixels.Color(255,0,0));
+  } else if (temperature >= 24) {
+    updateLEDs(pixels.Color(255, 0, 0));
 
+<<<<<<< HEAD
     //HOT ANIMATION
     drawImageRGB(gImage_hot1, 24,37);
     delay(500);
@@ -203,7 +251,26 @@ void loop() {
     drawImageRGB(gImage_hello2, 30,37);
     delay(500);
 
+=======
+    drawImageRGB(gImage_hot1, 24, 37);
+    delay(500);
+    drawImageRGB(gImage_hot2, 24, 37);
+    delay(500);
 
+  } else {
+    updateLEDs(pixels.Color(0, 255, 0));
+>>>>>>> 752c01f (updated tempogatchi arduino code and dashboard)
+
+    drawImageRGB(gImage_hello1, 30, 37);
+    delay(500);
+    drawImageRGB(gImage_hello2, 30, 37);
+    delay(500);
   }
+<<<<<<< HEAD
 }
   
+=======
+
+  delay(5000);
+}
+>>>>>>> 752c01f (updated tempogatchi arduino code and dashboard)
