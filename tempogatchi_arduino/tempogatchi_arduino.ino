@@ -21,6 +21,9 @@
 #define IMG_X_OFFSET -10
 #define IMG_Y_OFFSET 0
 #define IMG_ROTATION 1
+#define IMG_X_OFFSET -10
+#define IMG_Y_OFFSET 0
+#define IMG_ROTATION 1
 
 #define DHT11_PIN 3
 #define MIC_PIN A0
@@ -29,19 +32,21 @@
 
 Adafruit_ST7789 tft = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_RST);
 DHT dht11(DHT11_PIN, DHT11);
+Adafruit_ST7789 tft = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_RST);
+DHT dht11(DHT11_PIN, DHT11);
 Adafruit_NeoPixel pixels(NUM_PIXELS, NEO_PIN, NEO_GRB + NEO_KHZ800);
 
 float temperature;
 float humidity;
 int sound;
 
-char ssid[] = "Deepthi";
-char pass[] = "deepthimun06!";
+char ssid[] = ""; //enter hotspot name here
+char pass[] = ""; //enter password to hotspot here
 
-char host[] = "script.googleusercontent.com";
+char host[] = "script.google.com";
 String scriptPath = "/macros/s/AKfycbw8CTQ6rLaCNyg0ZCN2DIP3lWgGBUgFYQx8Q0NR8hZC-nH6f4odVU0cqXctE6CGDkwF/exec";
 
-WiFiClient client;
+WiFiSSLClient client;
 
 void drawImageRGB(const unsigned char* img, int width, int height) {
   for (int sourceY = 0; sourceY < height; sourceY++) {
@@ -84,7 +89,7 @@ void updateLEDs(uint32_t color) {
 =======
 >>>>>>> 752c01f (updated tempogatchi arduino code and dashboard)
 int readSoundLevel() {
-  const int samples = 200;
+  const int samples = 50;
   int minVal = 1023;
   int maxVal = 0;
 
@@ -92,7 +97,6 @@ int readSoundLevel() {
     int v = analogRead(MIC_PIN);
     if (v < minVal) minVal = v;
     if (v > maxVal) maxVal = v;
-    delay(1);
   }
 <<<<<<< HEAD
   return maxVal - minVal;
@@ -113,46 +117,53 @@ void connectToWiFi() {
 
   while (WiFi.begin(ssid, pass) != WL_CONNECTED) {
     Serial.print(".");
-    delay(3000);
+    delay(1500);
   }
 
   Serial.println();
   Serial.println("Connected to WiFi");
 
-  delay(3000);
+  delay(1500);
 
   Serial.print("IP Address: ");
   Serial.println(WiFi.localIP());
 }
 
 void sendToGoogleSheets(float temperature, float humidity, int sound) {
+
   if (WiFi.status() != WL_CONNECTED) {
     Serial.println("WiFi disconnected. Reconnecting...");
     connectToWiFi();
+    return;
   }
 
-  String url = scriptPath
-               + "?temperature=" + String(temperature, 1)
-               + "&humidity=" + String(humidity, 1)
-               + "&sound=" + String(sound);
+  String url = scriptPath +
+               "?temperature=" + String(temperature, 1) +
+               "&humidity=" + String(humidity, 1) +
+               "&sound=" + String(sound);
 
   Serial.println("Sending data...");
 
-  if (client.connect(host, 80)) {
-    client.println("GET " + url + " HTTP/1.0");
-    client.println("Host: script.google.com");
-    client.println("Connection: close");
-    client.println();
+  if (client.connect("script.google.com", 443)) {
 
-    while (client.connected() || client.available()) {
-      if (client.available()) {
+    client.print("GET " + url + " HTTP/1.1\r\n");
+    client.print("Host: script.google.com\r\n");
+    client.print("User-Agent: Arduino/1.0\r\n");   // <-- IMPORTANT
+    client.print("Connection: close\r\n\r\n");
+
+    unsigned long timeout = millis();
+
+    while (client.connected() && millis() - timeout < 5000) {
+      while (client.available()) {
         String line = client.readStringUntil('\n');
         Serial.println(line);
+        timeout = millis();
       }
     }
 
     client.stop();
     Serial.println("Done");
+
   } else {
     Serial.println("Connection failed");
   }
